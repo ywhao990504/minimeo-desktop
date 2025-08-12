@@ -35,17 +35,17 @@ export function accentClasses(accent: Accent) {
       }
     case "emerald":
       return {
-        boardBg: "from-emerald-100 to-teal-50 dark:from-emerald-900/35 dark:to-teal-900/15",
-        paperBg: "from-white to-emerald-50/60 dark:from-neutral-900 dark:to-emerald-950/15",
-        paperBorder: "border-emerald-200/60 dark:border-emerald-800/40",
-        binderBg: "from-emerald-300 to-teal-300",
-        binderBorder: "border-emerald-300/40",
+        boardBg: "from-emerald-100 to-teal-50/40 dark:from-emerald-900/60 dark:to-teal-900/30",
+        paperBg: "from-white/85 to-emerald-50/50 dark:from-neutral-950/90 dark:to-emerald-950/35",
+        paperBorder: "border-emerald-300/70 dark:border-emerald-800/60",
+        binderBg: "from-emerald-400 to-teal-400",
+        binderBorder: "border-emerald-400/60",
         hole: "bg-neutral-200 border-neutral-300 dark:bg-neutral-800 dark:border-neutral-700",
-        glow: "bg-emerald-300/18 dark:bg-emerald-500/10",
-        cardBg: "from-emerald-50 to-teal-50 dark:from-emerald-900/24 dark:to-teal-900/16",
-        cardBorder: "border-emerald-200/50 dark:border-emerald-700/35",
-        text: "text-emerald-500 dark:text-emerald-300",
-        icon: "text-emerald-500 dark:text-emerald-300",
+        glow: "bg-emerald-400/24 dark:bg-emerald-500/20",
+        cardBg: "from-emerald-50/70 to-teal-50/50 dark:from-emerald-900/40 dark:to-teal-900/28",
+        cardBorder: "border-emerald-300/60 dark:border-emerald-700/50",
+        text: "text-emerald-600 dark:text-emerald-300",
+        icon: "text-emerald-600 dark:text-emerald-300",
         shine: "bg-[linear-gradient(135deg,rgba(255,255,255,0.14),rgba(255,255,255,0.04))]",
       }
     case "orange":

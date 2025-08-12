@@ -4,8 +4,8 @@ import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'meomeo',
-  description: 'Created with v0',
+  title: 'minimeo',
+  description: 'minimeo wallpaper',
   generator: 'v0.dev',
 }
 

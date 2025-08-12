@@ -15,12 +15,12 @@ export default function CuteFlipDateStrip({
   speedMs = 60,
   accent = "pink",
   className = "",
-  size = "lg",
+  size = "xl",
 }: {
   speedMs?: number
   accent?: Accent
   className?: string
-  size?: "sm" | "md" | "lg"
+  size?: "sm" | "md" | "lg" | "xl"
 }) {
   const [nowTick, setNowTick] = useState(() => Date.now())
   useEffect(() => {
@@ -65,13 +65,15 @@ export default function CuteFlipDateStrip({
     if (!hovering) setDisplayWeather((w) => nextWeather(w))
   }
 
+  // 翻页动效的定时器（仅在悬停时运行），离开时一定清理，避免“停不下来”
   const digitTimerRef = useRef<number | null>(null)
   const weekTimerRef = useRef<number | null>(null)
   const weatherCycleRef = useRef<number | null>(null)
 
   useEffect(() => {
-    clearTimers()
+    // 悬停时开启动效
     if (hovering) {
+      clearTimers()
       digitTimerRef.current = window.setInterval(() => {
         setDisplayDigits((prev) => prev.map((n) => (Math.random() > 0.4 ? (n + 1) % 10 : n)))
       }, Math.max(30, speedMs))
@@ -83,15 +85,27 @@ export default function CuteFlipDateStrip({
       weatherCycleRef.current = window.setInterval(() => {
         setDisplayWeather((w) => nextWeather(w))
       }, Math.max(260, speedMs * 3.5))
-    } else {
-      // Snap back to targets on leave
+
+      return clearTimers
+    }
+
+    // 非悬停：对齐目标并确保清理
+    clearTimers()
+    setDisplayDigits(targetDigits)
+    setDisplayWeekIndex(targetWeekIndex)
+    setDisplayWeather(actualWeather)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hovering, speedMs])
+
+  // 时间/天气变化时，若未悬停则同步到目标值
+  useEffect(() => {
+    if (!hovering) {
       setDisplayDigits(targetDigits)
       setDisplayWeekIndex(targetWeekIndex)
       setDisplayWeather(actualWeather)
     }
-    return clearTimers
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hovering, speedMs, targetDigits, targetWeekIndex, actualWeather])
+  }, [targetDigits, targetWeekIndex, actualWeather])
 
   useEffect(() => {
     if (!hovering) {
@@ -180,7 +194,7 @@ function CalendarBoard({
 }) {
   return (
     <motion.div
-      className={cn("relative w-fit rounded-[28px] p-4 md:p-6", "bg-gradient-to-b shadow-xl", classes.boardBg)}
+      className={cn("relative w-fit rounded-[28px] p-4 md:p-6", "bg-gradient-to-b shadow-xl", classes.boardBg, "backdrop-blur-[2px]")}
       animate={hovering ? { rotate: [-0.4, 0.4, -0.4] } : { rotate: 0 }}
       transition={{ duration: hovering ? 2 : 0.4, repeat: hovering ? Infinity : 0, ease: "easeInOut" }}
     >
@@ -188,7 +202,7 @@ function CalendarBoard({
         className={cn(
           "relative rounded-3xl border p-4 md:p-6",
           "bg-gradient-to-b",
-          classes.paperBg,
+           classes.paperBg,
           classes.paperBorder,
           "shadow-[0_8px_20px_rgba(0,0,0,0.06)]"
         )}
@@ -211,8 +225,8 @@ function CalendarBoard({
 
         <motion.div
           aria-hidden
-          className={cn("pointer-events-none absolute -inset-2 rounded-[30px] blur-2xl", classes.glow)}
-          animate={hovering ? { opacity: 0.22 } : { opacity: [0.08, 0.16, 0.08] }}
+           className={cn("pointer-events-none absolute -inset-2 rounded-[30px] blur-2xl", classes.glow)}
+           animate={hovering ? { opacity: 0.28 } : { opacity: [0.12, 0.22, 0.12] }}
           transition={{ duration: hovering ? 0.2 : 3, repeat: hovering ? 0 : Infinity, ease: "easeInOut" }}
         />
 
@@ -408,7 +422,7 @@ function mapOpenMeteoToKind(code: number, windspeed: number): WeatherKind {
   return "cloud"
 }
 
-function sizeDims(size: "sm" | "md" | "lg") {
+function sizeDims(size: "sm" | "md" | "lg" | "xl") {
   switch (size) {
     case "sm":
       return { w: 40, h: 54, font: 26, space: 12 }
@@ -417,5 +431,7 @@ function sizeDims(size: "sm" | "md" | "lg") {
     case "lg":
     default:
       return { w: 64, h: 86, font: 46, space: 18 }
+    case "xl":
+      return { w: 96, h: 130, font: 70, space: 26 }
   }
 }
