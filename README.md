@@ -30,4 +30,3 @@ npm run dev
 ## 与 Lively Wallpaper 联动
 1. 先在本地启动服务（见上文）。
 2. 打开 Lively → Add Wallpaper → URL → 输入 `http://localhost:3000` → Add。
-```
