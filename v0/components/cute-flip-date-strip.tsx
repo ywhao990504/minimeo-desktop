@@ -40,10 +40,19 @@ export default function CuteFlipDateStrip({
   const [actualWeather, setActualWeather] = useState<WeatherKind>("sun")
   const [displayWeather, setDisplayWeather] = useState<WeatherKind>("sun")
 
+  // 保持最新的悬停状态，供定时器回调读取
+  const hoveringRef = useRef(false)
   useEffect(() => {
-    const lat = 39.9042
-    const lon = 116.4074
-    ;(async () => {
+    hoveringRef.current = hovering
+  }, [hovering])
+
+  // 天气：挂载即刻拉取，并每 30 分钟自动刷新一次
+  useEffect(() => {
+    let timerId: number | null = null
+
+    const fetchWeather = async () => {
+      const lat = 39.9042
+      const lon = 116.4074
       try {
         const res = await fetch(
           `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`
@@ -53,12 +62,21 @@ export default function CuteFlipDateStrip({
         if (!cw) return
         const kind = mapOpenMeteoToKind(Number(cw.weathercode), Number(cw.windspeed))
         setActualWeather(kind)
-        if (!hovering) setDisplayWeather(kind)
+        if (!hoveringRef.current) setDisplayWeather(kind)
       } catch {
         // ignore network errors
       }
-    })()
-  }, [hovering])
+    }
+
+    // 立即拉取一次
+    fetchWeather()
+    // 30 分钟刷新
+    timerId = window.setInterval(fetchWeather, 30 * 60 * 1000)
+
+    return () => {
+      if (timerId) window.clearInterval(timerId)
+    }
+  }, [])
 
   function cycleWeatherManually() {
     setActualWeather((w) => nextWeather(w))
