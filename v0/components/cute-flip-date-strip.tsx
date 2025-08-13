@@ -22,6 +22,9 @@ export default function CuteFlipDateStrip({
   className?: string
   size?: "sm" | "md" | "lg" | "xl"
 }) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const lastPointerRef = useRef<{ x: number; y: number; ts: number }>({ x: 0, y: 0, ts: 0 })
+  const hoverGuardRef = useRef<number | null>(null)
   const [nowTick, setNowTick] = useState(() => Date.now())
   useEffect(() => {
     const id = window.setInterval(() => setNowTick(Date.now()), 60_000)
@@ -131,6 +134,47 @@ export default function CuteFlipDateStrip({
     }
   }, [])
 
+  // 额外的全局指针位置检测，确保悬停状态与元素真实命中区域一致
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY, ts: Date.now() }
+      const el = containerRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
+      if (inside && !hoveringRef.current) {
+        setHovering(true)
+      } else if (!inside && hoveringRef.current) {
+        setHovering(false)
+      }
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => window.removeEventListener('pointermove', onMove)
+  }, [])
+
+  // 悬停看门狗：若长时间无指针活动或指针不在容器内，则强制结束悬停
+  useEffect(() => {
+    const tick = () => {
+      if (!hoveringRef.current) return
+      const el = containerRef.current
+      if (!el) return
+      const { x, y, ts } = lastPointerRef.current
+      const now = Date.now()
+      if (now - ts > 2000) { // 2 秒无活动则结束悬停
+        setHovering(false)
+        return
+      }
+      const rect = el.getBoundingClientRect()
+      const inside = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+      if (!inside) setHovering(false)
+    }
+    hoverGuardRef.current = window.setInterval(tick, 1000)
+    return () => {
+      if (hoverGuardRef.current) window.clearInterval(hoverGuardRef.current)
+      hoverGuardRef.current = null
+    }
+  }, [])
+
   // 组件卸载时兜底清理所有计时器
   useEffect(() => {
     return () => {
@@ -178,6 +222,7 @@ export default function CuteFlipDateStrip({
     <div className={cn("flex w-full items-center justify-center", className)}>
       <CalendarBoard classes={classes} hovering={hovering}>
         <motion.div
+          ref={containerRef}
           className="relative z-10 flex items-center gap-1.5 md:gap-2"
           onPointerEnter={() => setHovering(true)}
           onPointerLeave={() => setHovering(false)}
