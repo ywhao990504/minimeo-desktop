@@ -78,10 +78,7 @@ export default function CuteFlipDateStrip({
     }
   }, [])
 
-  function cycleWeatherManually() {
-    setActualWeather((w) => nextWeather(w))
-    if (!hovering) setDisplayWeather((w) => nextWeather(w))
-  }
+  // 取消手动点击切换天气，改为仅根据接口半小时刷新
 
   // 翻页动效的定时器（仅在悬停时运行），离开时一定清理，避免“停不下来”
   const digitTimerRef = useRef<number | null>(null)
@@ -114,6 +111,32 @@ export default function CuteFlipDateStrip({
     setDisplayWeather(actualWeather)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hovering, speedMs])
+
+  // 窗口失焦、鼠标离开窗口或文档隐藏时，强制结束悬停态，防止动画“停不下来”
+  useEffect(() => {
+    const endHover = () => setHovering(false)
+    const onPointerOut = (e: PointerEvent) => {
+      if (e.relatedTarget === null) endHover()
+    }
+    window.addEventListener('blur', endHover)
+    window.addEventListener('pointerleave', endHover)
+    window.addEventListener('pointerout', onPointerOut)
+    const onVis = () => { if (document.hidden) endHover() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener('blur', endHover)
+      window.removeEventListener('pointerleave', endHover)
+      window.removeEventListener('pointerout', onPointerOut)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [])
+
+  // 组件卸载时兜底清理所有计时器
+  useEffect(() => {
+    return () => {
+      clearTimers()
+    }
+  }, [])
 
   // 时间/天气变化时，若未悬停则同步到目标值
   useEffect(() => {
@@ -156,8 +179,9 @@ export default function CuteFlipDateStrip({
       <CalendarBoard classes={classes} hovering={hovering}>
         <motion.div
           className="relative z-10 flex items-center gap-1.5 md:gap-2"
-          onMouseEnter={() => setHovering(true)}
-          onMouseLeave={() => setHovering(false)}
+          onPointerEnter={() => setHovering(true)}
+          onPointerLeave={() => setHovering(false)}
+          onPointerCancel={() => setHovering(false)}
           animate={hovering ? { scale: 1 } : { scale: [1, 1.01, 1], y: [0, -1.5, 0] }}
           transition={{ duration: 2.2, ease: "easeInOut", repeat: hovering ? 0 : Infinity }}
           aria-label={label}
@@ -188,7 +212,6 @@ export default function CuteFlipDateStrip({
 
           <WeatherCardInline
             kind={displayWeather}
-            onCycle={cycleWeatherManually}
             flipping={hovering}
             classes={classes}
             dims={dims}
@@ -351,13 +374,11 @@ function WeekCard({
 
 function WeatherCardInline({
   kind,
-  onCycle,
   flipping,
   classes,
   dims,
 }: {
   kind: WeatherKind
-  onCycle: () => void
   flipping: boolean
   classes: ReturnType<typeof accentClasses>
   dims: ReturnType<typeof sizeDims>
@@ -367,13 +388,11 @@ function WeatherCardInline({
   const Icon = kind === "sun" ? Sun : kind === "cloud" ? Cloud : kind === "rain" ? CloudRain : kind === "snow" ? Snowflake : Wind
 
   return (
-    <motion.button
-      type="button"
-      aria-label="切换天气图标"
-      onClick={onCycle}
+    <motion.div
+      aria-label="当前天气"
       className={cn(
         "relative inline-flex items-center justify-center rounded-2xl border shadow-sm",
-        "bg-gradient-to-br backdrop-blur focus:outline-none",
+        "bg-gradient-to-br backdrop-blur",
         classes.cardBg,
         classes.cardBorder
       )}
@@ -396,7 +415,7 @@ function WeatherCardInline({
       >
         <Icon className={cn("h-7 w-7 md:h-8 md:w-8", classes.icon)} />
       </motion.span>
-    </motion.button>
+    </motion.div>
   )
 }
 
